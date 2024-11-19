@@ -6,6 +6,7 @@ import (
 )
 
 func commandExplore(cfg *config, args []string) error {
+	fmt.Println()
 	if len(args) != 1 {
 		return errors.New("you must provide a location name")
 	}
@@ -20,5 +21,7 @@ func commandExplore(cfg *config, args []string) error {
 	for _, enc := range location.PokemonEncounters {
 		fmt.Printf(" - %s\n", enc.Pokemon.Name)
 	}
+
+	fmt.Println()
 	return nil
 }
