@@ -1,27 +1,32 @@
 package main
 
-import "fmt"
+import (
+	"errors"
+	"fmt"
+	"math/rand"
+)
 
 func commandCatch(cfg *config, args []string) error {
-	fmt.Println()
+	if len(args) != 1 {
+		return errors.New("you must provide a pokemon name")
+	}
 
-	if len(args) == 0 {
-		fmt.Println("Please provide a Pokemon to catch")
+	name := args[0]
+	pokemon, err := cfg.pokeapiClient.GetPokemon(name)
+	if err != nil {
+		return err
+	}
+
+	res := rand.Intn(100) > pokemon.Experience
+
+	fmt.Printf("Throwing a Pokeball at %s...\n", pokemon.Name)
+	if !res {
+		fmt.Printf("%s escaped!\n", pokemon.Name)
 		return nil
 	}
 
-	fmt.Println("Throwing a Pokeball at " + args[0] + "...")
-	caught, err := cfg.pokeapiClient.CatchPokemon(&args[0])
-	if err != nil {
-		fmt.Println(err)
-	}
+	fmt.Printf("%s was caught!\n", pokemon.Name)
 
-	if caught {
-		fmt.Println(args[0] + " was caught!")
-	} else {
-		fmt.Println(args[0] + " escaped!")
-	}
-
-	fmt.Println()
+	cfg.pokedex[pokemon.Name] = pokemon
 	return nil
 }

@@ -3,7 +3,7 @@ package pokeapi
 import (
 	"encoding/json"
 	"fmt"
-	"math/rand"
+	"io"
 	"net/http"
 	"os"
 
@@ -38,38 +38,59 @@ func (c *Client) ListPokemons(area *string) (RespShallowPokemons, error) {
 	}
 	defer res.Body.Close()
 
-	var pokemons RespShallowPokemons
-	if err := json.NewDecoder(res.Body).Decode(&pokemons); err != nil {
+	dat, err := io.ReadAll(res.Body)
+	if err != nil {
 		return RespShallowPokemons{}, err
 	}
 
+	var pokemons RespShallowPokemons
+	if err := json.Unmarshal(dat, &pokemons); err != nil {
+		return RespShallowPokemons{}, err
+	}
+
+	c.cache.Add(url, dat)
 	return pokemons, nil
 }
 
-func (c *Client) CatchPokemon(pokemon *string) (bool, error) {
+func (c *Client) GetPokemon(pokemonName string) (Pokemon, error) {
 	if err := godotenv.Load(); err != nil {
-		return false, err
+		return Pokemon{}, err
 	}
 
-	url := fmt.Sprintf("%s/pokemon/%s", os.Getenv("POKEAPI_URL"), *pokemon)
+	url := fmt.Sprintf("%s/pokemon/%s", os.Getenv("POKEAPI_URL"), pokemonName)
+
+	if val, ok := c.cache.Get(url); ok {
+		pokemonResp := Pokemon{}
+		err := json.Unmarshal(val, &pokemonResp)
+		if err != nil {
+			return Pokemon{}, err
+		}
+		return pokemonResp, nil
+	}
 
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
-		return false, err
+		return Pokemon{}, err
 	}
 
-	res, err := c.httpClient.Do(req)
+	resp, err := c.httpClient.Do(req)
 	if err != nil {
-		return false, err
+		return Pokemon{}, err
 	}
-	defer res.Body.Close()
+	defer resp.Body.Close()
 
-	var pokemonResp RespPokemon
-	if err := json.NewDecoder(res.Body).Decode(&pokemonResp); err != nil {
-		return false, err
+	dat, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return Pokemon{}, err
 	}
 
-	caught := rand.Intn(100) > pokemonResp.Experience
+	pokemonResp := Pokemon{}
+	err = json.Unmarshal(dat, &pokemonResp)
+	if err != nil {
+		return Pokemon{}, err
+	}
 
-	return caught, nil
+	c.cache.Add(url, dat)
+
+	return pokemonResp, nil
 }
