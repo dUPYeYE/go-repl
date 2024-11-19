@@ -107,6 +107,7 @@ type Pokemon struct {
 		} `json:"type"`
 	} `json:"types"`
 	Weight  int `json:"weight"`
+	Height  int `json:"height"`
 	Sprites struct {
 		FrontDefault string `json:"front_default"`
 	} `json:"sprites"`
