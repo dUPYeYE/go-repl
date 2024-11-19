@@ -3,6 +3,7 @@ package pokeapi
 import (
 	"encoding/json"
 	"fmt"
+	"math/rand"
 	"net/http"
 	"os"
 
@@ -43,4 +44,32 @@ func (c *Client) ListPokemons(area *string) (RespShallowPokemons, error) {
 	}
 
 	return pokemons, nil
+}
+
+func (c *Client) CatchPokemon(pokemon *string) (bool, error) {
+	if err := godotenv.Load(); err != nil {
+		return false, err
+	}
+
+	url := fmt.Sprintf("%s/pokemon/%s", os.Getenv("POKEAPI_URL"), *pokemon)
+
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		return false, err
+	}
+
+	res, err := c.httpClient.Do(req)
+	if err != nil {
+		return false, err
+	}
+	defer res.Body.Close()
+
+	var pokemonResp RespPokemon
+	if err := json.NewDecoder(res.Body).Decode(&pokemonResp); err != nil {
+		return false, err
+	}
+
+	caught := rand.Intn(100) > pokemonResp.Experience
+
+	return caught, nil
 }

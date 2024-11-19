@@ -20,3 +20,8 @@ type RespShallowPokemons struct {
 		} `json:"pokemon"`
 	} `json:"pokemon_encounters"`
 }
+
+// RespPokemon -
+type RespPokemon struct {
+	Experience int `json:"base_experience"`
+}
